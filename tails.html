@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tails Fly</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Liga este documento HTML com o arquivo de estilo CSS -->
+<style>
+    @font-face {
+    font-family: 'Alagard'; /* Define um nome para a fonte */
+    src: url('font/alagard.ttf') format('opentype'); /* Caminho para a fonte */
+  }
+  
+  @font-face {
+    font-family: '8-bit Arcade In'; 
+    src: url('font/8-bit\ Arcade\ In.ttf') format('opentype'); 
+  }
+  
+  body {
+    /* Define as configurações padrão para o corpo do documento */
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #70c5ce;
+  }
+  
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: url('fundinho.gif') repeat-x;
+    background-size: cover;
+  }
+  
+  #morcego {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: url('tailsFly.gif') no-repeat center center;
+    background-size: cover;
+    top: 50%;
+    left: 20%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    filter: drop-shadow(0px 0px 5px #cecece);
+  }
+  
+  #laser {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background-color: red;
+    top: 50%;
+    left: 20%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    display: none;
+  }
+  
+  #laser.active {
+    display: block;
+    animation: shootLaser 1s linear forwards;
+  }
+  
+  @keyframes shootLaser {
+    0% { left: 20%; width: 0; }
+    100% { left: 100%; width: 1000px; }
+  }
+  
+  .pipe {
+    position: absolute;
+    width: 60px;
+    height: 300px;
+    background:
+    linear-gradient(45deg, #8B4513 25%, #A0522D 25%, #A0522D 75%, #8B4513 75%, #8B4513),
+    linear-gradient(to bottom, #8B4513 50%, #A0522D 50%);
+    background-size: 20px 20px, 100% 100%;
+    bottom: 0;
+    animation: movePipe 4s linear infinite;
+    z-index: 5;
+    border-radius: 20px;
+    border: 2px solid grey;
+  }
+  
+  .pipe.top {
+    bottom: auto;
+    top: 0;
+  }
+  
+  .pipe.paused {
+    animation-play-state: paused;
+  }
+  
+  #score {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: #FDDC00;
+    font-family: 'Alagard', Arial, sans-serif;;
+    z-index: 15;
+    text-shadow: 2px 2px 7px #494949;
+  }
+  
+  @keyframes deflate {
+    0% { transform: translate(-50%) scale(1.5); }
+    100% { transform: translate(-50%) scale(1); }
+  }
+  
+  #score.deflate {
+    animation: deflate 0.2s forwards;
+  }
+  
+  @keyframes movePipe {
+    from {
+        left: 100%;
+    }
+    to {
+        left: -60px;
+    }
+  }
+  
+  #initial-screen,
+  #death-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-family: 'alagard', Arial, sans-serif;;
+    font-size: 24px;
+    z-index: 20;
+    text-shadow: 2px 2px 7px #000000;
+  }
+  
+  #death-screen {
+    display: none;
+  }
+  
+  #initial-screen img {
+    width: 700px;
+    height: auto;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  
+  @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  
+  #initial-screen p {
+    animation: blink 1s infinite;
+  }
+  
+  #death-screen h2 {
+    color: #FDDC00; 
+    margin-top: 10px;
+  }
+  
+  #death-screen p {
+    animation: blink 1s infinite;
+  }
+  
+  #record {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    color: #FDDC00;
+    font-family: 'Alagard', Arial, sans-serif;
+    z-index: 15;
+    text-shadow: 2px 2px 7px #494949;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  #initial-record {
+    font-size: 24px;
+    color: #FDDC00;
+    font-family: 'Alagard', Arial, sans-serif;
+    z-index: 15;
+    text-shadow: 2px 2px 7px #494949;
+    font-size: 3rem; /* escolha o tamanho que você deseja */
+    animation: none !important; /* isto irá impedir o piscar */
+    margin-top: -30px;
+  }
+</style>
+</head>
+<body>
+    <!-- Contém todos os elementos do jogo -->
+    <div id="game">
+        <!-- Representa o morcego -->
+        <div id="morcego"></div>
+        
+        <!-- Representa os raios dos olhos do morcego -->
+        <div id="rays" class="hidden"></div>
+
+        <!-- Exibe a pontuação atual -->
+        <div id="score">0</div>
+
+        <!--Exibe o recorde de pontuações do jogador-->
+        <div id="record">Recorde: 0</div>
+        
+        <!-- Exibida quando o jogo é inicializado -->
+        <div id="initial-screen">
+            <img src= "img/logo_bat_asas.png" alt="Tails Fly">
+        <!-- Exibe o recorde no ecrã inicial -->
+        <p id="initial-record"></p>
+        <!-- Posição alterada -->
+        <p>Pressione "Espaço" para começar</p>
+        </div>
+
+        <div id="laser"></div>
+
+        <!-- Exibida quando o morcego é atingido -->
+        <div id="death-screen">
+            <h1>Você perdeu</h1>
+            <h2>Sua pontuação: <span id="final-score"></span></h2>
+            <p>Pressione "Espaço" para reiniciar</p>
+        </div>
+    </div>
+
+    <!-- Músicas do jogo -->
+    <audio id="background-music" loop>
+        <source src="audio/Alice - Snow (from Super Chicken Jumper OST) (320).mp3" type="audio/mpeg">
+    </audio> <!--musica de fundo-->
+
+    <audio id="jump-music">
+        <source src="audio/pulo.mp3" type="audio/mpeg">
+    </audio> <!--som de pulo-->
+
+    <audio id="end-music">
+        <source src="audio/jevil_byebye.mp3" type="audio/mpeg">
+    </audio> <!--som de morte-->
+
+    <!-- Script que contém a lógica do jogo -->
+    <script src="script.js"></script>
+<script>
+    let morcego, game, scoreDisplay, initialScreen, deathScreen, finalScore, recordDisplay, initialScreenRecord;
+let backgroundMusic, jumpMusic, endMusic;
+let morcegoY, gameInterval, pipeInterval, score, backgroundPositionX, gameOver, gameStarted, record;
+let laserEnabled = false;
+const gravity = 0.3;
+const lift = -8;
+let velocity = 0;
+let inputBuffer = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+    morcego = document.getElementById('morcego');
+    game = document.getElementById('game');
+    scoreDisplay = document.getElementById('score');
+    initialScreen = document.getElementById('initial-screen');
+    deathScreen = document.getElementById('death-screen');
+    finalScore = document.getElementById('final-score');
+    recordDisplay = document.getElementById('record');
+    initialScreenRecord = document.getElementById('initial-record');
+
+    backgroundMusic = document.getElementById('background-music');
+    jumpMusic = document.getElementById('jump-music');
+    endMusic = document.getElementById('end-music');
+
+    backgroundMusic.volume = 0.5;
+
+    morcegoY = window.innerHeight / 2;
+    gameInterval;
+    pipeInterval;
+    score = 0;
+    backgroundPositionX = 0;
+    gameOver = false;
+    gameStarted = false;
+
+    record = localStorage.getItem('record') || 0;
+    recordDisplay.textContent = "Recorde: " + record;
+    initialScreenRecord.textContent = "Recorde: " + record;
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            if (!gameStarted) {
+                initialScreen.style.display = 'none';
+                gameStarted = true;
+                startGame();
+            } else if (deathScreen.style.display === 'flex') {
+                window.location.reload();
+            } else {
+                fly();
+            }
+        } else if (laserEnabled && e.code === 'KeyL') {
+            shootLaser();
+        } else {
+            handleCodeInput(e.key);
+        }
+    });
+});
+
+function startGame() {
+    gameInterval = setInterval(gameLoop, 20);
+    pipeInterval = setInterval(createPipe, 2500);
+    backgroundMusic.play();
+}
+
+function gameLoop() {
+    if (gameOver) return;
+
+    velocity += gravity;
+    morcegoY += velocity;
+    morcego.style.top = morcegoY + 'px';
+
+    if (morcegoY > window.innerHeight || morcegoY < 0) endGame();
+
+    let hitboxBuffer = 10;
+    let pipes = document.querySelectorAll('.pipe');
+    pipes.forEach(pipe => {
+        let pipeRect = pipe.getBoundingClientRect();
+        let morcegoRect = morcego.getBoundingClientRect();
+        let buffer = 5;
+        if (
+            morcegoRect.right - buffer - hitboxBuffer > pipeRect.left &&
+            morcegoRect.left + buffer + hitboxBuffer < pipeRect.right &&
+            ((morcegoRect.bottom - buffer - hitboxBuffer > pipeRect.top && pipe.classList.contains('bottom')) ||
+            (morcegoRect.top + buffer + hitboxBuffer < pipeRect.bottom && pipe.classList.contains('top')))
+        ) {
+            endGame();
+        }
+
+        if (!pipe.passed && morcegoRect.right - buffer > pipeRect.right) {
+            pipe.passed = true;
+            if (pipe.classList.contains('top')) {
+                score++;
+                scoreDisplay.textContent = score;
+                scoreDisplay.classList.remove('deflate');
+                scoreDisplay.classList.add('deflate');
+            }
+        }
+
+        if (pipeRect.right < 0) {
+            pipe.remove();
+        }
+    });
+
+    scoreDisplay.onanimationend = () => {
+        scoreDisplay.classList.remove('deflate');
+    };
+
+    backgroundPositionX -= 2;
+    game.style.backgroundPositionX = backgroundPositionX + 'px';
+}
+
+function createPipe() {
+    let pipeHeight = Math.floor(Math.random() * (window.innerHeight / 2)) + 50;
+    const gap = 200;
+
+    let topPipe = document.createElement('div');
+    topPipe.classList.add('pipe', 'top');
+    topPipe.style.height = pipeHeight + 'px';
+    topPipe.style.left = '100%';
+    topPipe.passed = false;
+    game.appendChild(topPipe);
+
+    let bottomPipe = document.createElement('div');
+    bottomPipe.classList.add('pipe', 'bottom');
+    bottomPipe.style.height = (window.innerHeight - pipeHeight - gap) + 'px';
+    bottomPipe.style.left = '100%';
+    bottomPipe.passed = false;
+    game.appendChild(bottomPipe);
+
+    setTimeout(() => {
+        if (!gameOver) {
+            topPipe.remove();
+            bottomPipe.remove();
+        }
+    }, 4000);
+}
+
+function fly() {
+    if (gameOver) return;
+    velocity = lift;
+    jumpMusic.play();
+}
+
+function endGame() {
+    gameOver = true;
+    clearInterval(gameInterval);
+    clearInterval(pipeInterval);
+    if (score > record) {
+        record = score;
+        localStorage.setItem('record', record);
+        recordDisplay.textContent = "Recorde: " + record;
+        initialScreenRecord.textContent = "Recorde: " + record;
+    }
+    finalScore.textContent = score;
+    deathScreen.style.display = 'flex';
+    backgroundMusic.pause();
+    backgroundMusic.currentTime = 0;
+    endMusic.play();
+    let pipes = document.querySelectorAll('.pipe');
+    pipes.forEach(pipe => {
+        pipe.classList.add('paused');
+    });
+}
+
+function shootLaser() {
+    const laser = document.getElementById('laser');
+    laser.style.top = morcego.getBoundingClientRect().top + morcego.offsetHeight / 2 - laser.offsetHeight / 2 + 'px';
+    laser.style.left = morcego.getBoundingClientRect().left + morcego.offsetWidth + 'px';
+    laser.classList.add('active');
+
+    // Verifica colisão com os obstáculos
+    const laserMoveInterval = setInterval(() => {
+        const laserRect = laser.getBoundingClientRect();
+        const pipes = document.querySelectorAll('.pipe');
+        pipes.forEach(pipe => {
+            const pipeRect = pipe.getBoundingClientRect();
+            if (
+                laserRect.right > pipeRect.left &&
+                laserRect.left < pipeRect.right &&
+                laserRect.bottom > pipeRect.top &&
+                laserRect.top < pipeRect.bottom
+            ) {
+                pipe.remove();
+                laser.classList.remove('active');
+                clearInterval(laserMoveInterval);
+            }
+        });
+
+        if (laserRect.left > window.innerWidth) {
+            laser.classList.remove('active');
+            clearInterval(laserMoveInterval);
+        }
+    }, 20);
+
+    // Remove a classe 'active' após a animação terminar
+    laser.onanimationend = () => {
+        laser.classList.remove('active');
+    };
+}
+
+function handleCodeInput(key) {
+    inputBuffer += key.toLowerCase();
+    if (inputBuffer.includes('laser')) {
+        enableLaser();
+        inputBuffer = ''; // Limpa o buffer após ativar o laser
+    }
+}
+
+function enableLaser() {
+    laserEnabled = true;
+    alert('Laser habilitado!');
+}
+
+</script>
+</body>
+
+
+
+
+
+
+</html>

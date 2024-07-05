@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Moeda</title>
+    <link rel="stylesheet" href="styles.css">
+<style>
+    body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin: 10px 0 5px;
+}
+
+input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#resultado {
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conversor de Moeda</h1>
+        <form id="converterForm">
+            <label for="valorReais">Valor em Reais (BRL):</label>
+            <input type="number" id="valorReais" required>
+            
+            <label for="moeda">Converter para:</label>
+            <select id="moeda">
+                <option value="USD">Dólar Americano (USD)</option>
+                <option value="EUR">Euro (EUR)</option>
+                <option value="GBP">Libra Esterlina (GBP)</option>
+            </select>
+            
+            <button type="submit">Converter</button>
+        </form>
+        <div id="resultado"></div>
+        <p>As taxas de câmbio são obtidas em tempo real.</p>
+    </div>
+    <script>
+        document.getElementById('converterForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    
+    const valorReais = parseFloat(document.getElementById('valorReais').value);
+    const moeda = document.getElementById('moeda').value;
+    
+    const apiKey = 'fc78e6e01e165cf9ca5e3358'; // Substitua pela sua chave da API
+    const apiUrl = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/BRL`;
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            const taxaCambio = data.conversion_rates[moeda];
+            const valorConvertido = (valorReais * taxaCambio).toFixed(2);
+            document.getElementById('resultado').textContent = `O valor convertido é: ${valorConvertido} ${moeda}`;
+        })
+        .catch(error => {
+            console.error('Erro ao buscar taxa de câmbio:', error);
+            document.getElementById('resultado').textContent = 'Erro ao buscar taxa de câmbio. Tente novamente mais tarde.';
+        });
+});
+
+    </script>
+</body>
+</html>
